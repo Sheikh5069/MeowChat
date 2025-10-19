@@ -114,6 +114,17 @@
             display: block;
         }
 
+        .loading {
+            color: #667eea;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9em;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -135,7 +146,6 @@
             }
         }
 
-        /* Sidebar */
         .sidebar {
             background: #fff;
             border-radius: 15px;
@@ -187,17 +197,26 @@
             gap: 8px;
             margin-top: 15px;
             padding: 12px;
-            background: #e8f5e9;
+            background: #ffebee;
             border-radius: 8px;
-            border-left: 4px solid #4caf50;
+            border-left: 4px solid #f44336;
         }
 
         .status-dot {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: #99cc00;
+            background: #f44336;
             animation: pulse 2s infinite;
+        }
+
+        .status.connected {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .status.connected .status-dot {
+            background: #99cc00;
         }
 
         @keyframes pulse {
@@ -205,13 +224,21 @@
             50% { opacity: 0.5; }
         }
 
-        .status.disconnected {
-            background: #ffebee;
-            border-left-color: #f44336;
+        .otherUserInfo {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            display: none;
         }
 
-        .status.disconnected .status-dot {
-            background: #f44336;
+        .otherUserInfo.show {
+            display: block;
+        }
+
+        .otherUserInfo p {
+            font-size: 0.9em;
+            color: #1565c0;
         }
 
         .disconnect-btn {
@@ -230,7 +257,6 @@
             background: #ee5a52;
         }
 
-        /* Chat Room */
         .chat-room {
             background: #fff;
             border-radius: 15px;
@@ -363,7 +389,6 @@
             justify-content: center;
         }
 
-        /* Input Area */
         .input-area {
             padding: 20px;
             background: #fff;
@@ -442,6 +467,29 @@
         .file-input {
             display: none;
         }
+
+        .setup-firebase {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .setup-firebase p {
+            font-size: 0.9em;
+            color: #856404;
+            margin: 5px 0;
+        }
+
+        .setup-firebase a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .setup-firebase a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -450,6 +498,11 @@
         <div class="login-box">
             <h1>🔐 Secure Chat</h1>
             <p>Connect with a friend using a unique code</p>
+
+            <div id="firebaseSetup" class="setup-firebase">
+                <p><strong>✅ Firebase Ready!</strong></p>
+                <p>Your chat is connected. Just enter a username and unique code to start!</p>
+            </div>
 
             <div class="form-group">
                 <label for="loginUsername">Your Username:</label>
@@ -461,9 +514,10 @@
                 <input type="text" id="uniqueCode" placeholder="Enter or create a code" maxlength="10">
             </div>
 
-            <button class="join-btn" onclick="joinChat()">Join Chat</button>
+            <button class="join-btn" id="joinBtn" onclick="joinChat()">Join Chat</button>
 
             <div class="error-msg" id="errorMsg"></div>
+            <div class="loading" id="loading">⏳ Connecting...</div>
         </div>
     </div>
 
@@ -488,8 +542,8 @@
                 <span>Waiting for connection...</span>
             </div>
 
-            <div id="otherUserInfo" style="display: none; background: #e3f2fd; padding: 12px; border-radius: 8px; border-left: 4px solid #2196f3;">
-                <p style="font-size: 0.9em; color: #1565c0;"><strong>Connected with:</strong></p>
+            <div class="otherUserInfo" id="otherUserInfo">
+                <p><strong>Connected with:</strong></p>
                 <p id="connectedUserName" style="font-size: 0.95em; color: #333; margin-top: 5px;"></p>
             </div>
 
@@ -526,14 +580,20 @@
         </div>
     </div>
 
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
+
     <script>
-        // Store all active chat sessions
-        let chatSessions = JSON.parse(localStorage.getItem('chatSessions')) || {};
+        let db = null;
         let currentUser = null;
         let currentChatCode = null;
         let connectedUser = null;
-        let connectionCheckInterval = null;
+        let messagesRef = null;
+        let usersRef = null;
+        let listenerUnsubscribe = null;
 
         const messageEl = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
@@ -542,18 +602,36 @@
         const loginContainer = document.getElementById('loginContainer');
         const chatContainer = document.getElementById('chatContainer');
         const errorMsg = document.getElementById('errorMsg');
+        const loadingMsg = document.getElementById('loading');
 
-        function encryptMessage(text, key) {
-            return CryptoJS.AES.encrypt(text, key).toString();
+        // Your Firebase Config (Hardcoded)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzJ-G30vWbWoUFBSGLGQApRWdBLT61QOA",
+            authDomain: "meowchat-f42b9.firebaseapp.com",
+            projectId: "meowchat-f42b9",
+            storageBucket: "meowchat-f42b9.firebasestorage.app",
+            messagingSenderId: "900382484371",
+            appId: "1:900382484371:web:ad79673ff2c42d2cf12a66",
+            databaseURL: "https://meowchat-f42b9-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        function initializeFirebase(config) {
+            try {
+                const app = firebase.initializeApp(config);
+                db = firebase.database(app);
+                console.log('✅ Firebase initialized successfully!');
+                return true;
+            } catch (error) {
+                console.error('Firebase error:', error);
+                showError('Firebase setup failed. Check console.');
+                return false;
+            }
         }
 
-        function decryptMessage(encryptedText, key) {
-            try {
-                const bytes = CryptoJS.AES.decrypt(encryptedText, key);
-                return bytes.toString(CryptoJS.enc.Utf8);
-            } catch (e) {
-                return encryptedText;
-            }
+        // Auto-initialize Firebase
+        function checkFirebaseConfig() {
+            return initializeFirebase(firebaseConfig);
         }
 
         function showError(msg) {
@@ -566,11 +644,23 @@
             errorMsg.textContent = '';
         }
 
+        function showLoading(show) {
+            if (show) {
+                loadingMsg.classList.add('show');
+            } else {
+                loadingMsg.classList.remove('show');
+            }
+        }
+
         function joinChat() {
+            clearError();
+            
+            if (!db) {
+                if (!checkFirebaseConfig()) return;
+            }
+
             const username = document.getElementById('loginUsername').value.trim();
             const code = document.getElementById('uniqueCode').value.trim().toUpperCase();
-
-            clearError();
 
             if (!username) {
                 showError('Please enter a username');
@@ -587,57 +677,74 @@
                 return;
             }
 
+            showLoading(true);
+
             currentUser = {
                 name: username,
-                id: Math.random().toString(36).substr(2, 9),
-                joinTime: new Date()
+                id: 'user_' + Math.random().toString(36).substr(2, 9),
+                joinTime: new Date().getTime()
             };
 
             currentChatCode = code;
+            messagesRef = db.ref(`chats/${code}/messages`);
+            usersRef = db.ref(`chats/${code}/users`);
 
-            // Initialize chat session
-            if (!chatSessions[code]) {
-                chatSessions[code] = [];
-            }
+            // Add user to Firebase
+            usersRef.child(currentUser.id).set(currentUser).then(() => {
+                // Show chat screen
+                loginContainer.style.display = 'none';
+                chatContainer.classList.add('active');
 
-            chatSessions[code].push(currentUser);
-            localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+                // Update UI
+                document.getElementById('displayUsername').textContent = username;
+                document.getElementById('displayCode').textContent = code;
 
-            // Check if another user with same code exists
-            checkForConnection();
+                showLoading(false);
 
-            // Show chat screen
-            loginContainer.style.display = 'none';
-            chatContainer.classList.add('active');
-
-            // Update UI
-            document.getElementById('displayUsername').textContent = username;
-            document.getElementById('displayCode').textContent = code;
-
-            // Check for connection every 1 second
-            connectionCheckInterval = setInterval(checkForConnection, 1000);
+                // Listen for other users
+                listenForConnections();
+                // Listen for messages
+                listenForMessages();
+            }).catch(err => {
+                showError('Failed to join chat: ' + err.message);
+                showLoading(false);
+            });
         }
 
-        function checkForConnection() {
-            const sessions = JSON.parse(localStorage.getItem('chatSessions')) || {};
-            const usersInSession = sessions[currentChatCode] || [];
+        function listenForConnections() {
+            usersRef.on('value', (snapshot) => {
+                const users = snapshot.val() || {};
+                const otherUsers = Object.values(users).filter(u => u.id !== currentUser.id);
 
-            // Check if there's another user
-            const otherUsers = usersInSession.filter(u => u.id !== currentUser.id);
+                if (otherUsers.length > 0 && !connectedUser) {
+                    connectedUser = otherUsers[0];
+                    handleConnection();
+                }
 
-            if (otherUsers.length > 0 && !connectedUser) {
-                connectedUser = otherUsers[0];
-                handleConnection();
+                // Update connection status
+                if (connectedUser) {
+                    document.getElementById('connectionStatus').classList.add('connected');
+                    document.getElementById('connectionStatus').innerHTML = '<div class="status-dot"></div><span>Connected & Encrypted</span>';
+                    document.getElementById('chatStatus').textContent = `Connected with ${connectedUser.name}`;
+                    document.getElementById('connectedUserName').textContent = connectedUser.name;
+                    document.getElementById('otherUserInfo').classList.add('show');
+                } else {
+                    document.getElementById('connectionStatus').classList.remove('connected');
+                }
+            });
+        }
+
+        function listenForMessages() {
+            if (listenerUnsubscribe) {
+                listenerUnsubscribe();
             }
 
-            // Update connection status
-            if (connectedUser) {
-                document.getElementById('connectionStatus').className = 'status';
-                document.getElementById('connectionStatus').innerHTML = '<div class="status-dot"></div><span>Connected & Encrypted</span>';
-                document.getElementById('chatStatus').textContent = `Connected with ${connectedUser.name}`;
-                document.getElementById('connectedUserName').textContent = connectedUser.name;
-                document.getElementById('otherUserInfo').style.display = 'block';
-            }
+            messagesRef.on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                if (msg.senderId !== currentUser.id) {
+                    displayMessage(msg, 'received');
+                }
+            });
         }
 
         function handleConnection() {
@@ -659,26 +766,18 @@
             const text = messageInput.value.trim();
             if (!text || !connectedUser) return;
 
-            const encrypted = encryptMessage(text, currentChatCode);
             const msg = {
                 sender: currentUser.name,
                 senderId: currentUser.id,
                 content: text,
-                encrypted: encrypted,
                 timestamp: new Date().toLocaleTimeString(),
-                type: 'text',
-                chatCode: currentChatCode
+                type: 'text'
             };
 
-            // Save message
-            saveChatMessage(msg);
-            displayMessage(msg, 'sent');
-            messageInput.value = '';
-
-            // Simulate receiving the message
-            setTimeout(() => {
-                displayMessage(msg, 'received');
-            }, 300);
+            messagesRef.push(msg).then(() => {
+                displayMessage(msg, 'sent');
+                messageInput.value = '';
+            }).catch(err => console.error('Error sending message:', err));
         }
 
         function handleFile(event) {
@@ -700,24 +799,15 @@
                     fileSize: fileSize,
                     fileData: fileData,
                     timestamp: new Date().toLocaleTimeString(),
-                    type: 'file',
-                    chatCode: currentChatCode
+                    type: 'file'
                 };
 
-                saveChatMessage(msg);
-                displayMessage(msg, 'sent');
-                setTimeout(() => {
-                    displayMessage(msg, 'received');
-                }, 300);
+                messagesRef.push(msg).then(() => {
+                    displayMessage(msg, 'sent');
+                }).catch(err => console.error('Error sending file:', err));
             };
             reader.readAsDataURL(file);
             event.target.value = '';
-        }
-
-        function saveChatMessage(msg) {
-            let messages = JSON.parse(localStorage.getItem(`chat_${currentChatCode}`)) || [];
-            messages.push(msg);
-            localStorage.setItem(`chat_${currentChatCode}`, JSON.stringify(messages));
         }
 
         function displayMessage(msg, direction) {
@@ -781,12 +871,8 @@
 
         function disconnectChat() {
             if (confirm('Are you sure you want to disconnect?')) {
-                clearInterval(connectionCheckInterval);
-                const sessions = JSON.parse(localStorage.getItem('chatSessions')) || {};
-                if (sessions[currentChatCode]) {
-                    sessions[currentChatCode] = sessions[currentChatCode].filter(u => u.id !== currentUser.id);
-                    localStorage.setItem('chatSessions', JSON.stringify(sessions));
-                }
+                usersRef.child(currentUser.id).remove();
+                if (listenerUnsubscribe) listenerUnsubscribe();
                 location.reload();
             }
         }
@@ -796,4 +882,4 @@
         });
     </script>
 </body>
-</html>
+    </html>
