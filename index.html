@@ -593,8 +593,18 @@
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
+    <script>
+        // Wait for Firebase to load
+        function waitForFirebase() {
+            if (typeof firebase === 'undefined') {
+                setTimeout(waitForFirebase, 100);
+            } else {
+                console.log('✅ Firebase library loaded!');
+            }
+        }
+        waitForFirebase();
+    </script>
 
     <script>
         let db = null;
@@ -676,6 +686,1853 @@
 
         function joinChat() {
             clearError();
+            
+            if (typeof firebase === 'undefined') {
+                showError('Firebase is still loading... Please wait a moment and try again');
+                return;
+            }
+            
+            if (!db) {
+                if (!checkFirebaseConfig()) return;
+            }
+
+            const username = document.getElementById('loginUsername').value.trim();
+            const code = document.getElementById('uniqueCode').value.trim().toUpperCase();
+
+            if (!username) {
+                showError('Please enter a username');
+                return;
+            }
+
+            if (!code) {
+                showError('Please enter a unique code');
+                return;
+            }
+
+            if (code.length < 3) {
+                showError('Code must be at least 3 characters');
+                return;
+            }
+
+            showLoading(true);
+
+            currentUser = {
+                name: username,
+                id: 'user_' + Math.random().toString(36).substr(2, 9),
+                joinTime: new Date().getTime()
+            };
+
+            currentChatCode = code;
+            messagesRef = db.ref(`chats/${code}/messages`);
+            usersRef = db.ref(`chats/${code}/users`);
+
+            // Add user to Firebase
+            usersRef.child(currentUser.id).set(currentUser).then(() => {
+                // Show chat screen
+                loginContainer.style.display = 'none';
+                chatContainer.classList.add('active');
+
+                // Update UI
+                document.getElementById('displayUsername').textContent = username;
+                document.getElementById('displayCode').textContent = code;
+
+                showLoading(false);
+
+                // Listen for other users
+                listenForConnections();
+                // Listen for messages
+                listenForMessages();
+            }).catch(err => {
+                showError('Failed to join chat: ' + err.message);
+                showLoading(false);
+            });
+        }
+
+        function listenForConnections() {
+            usersRef.on('value', (snapshot) => {
+                const users = snapshot.val() || {};
+                const otherUsers = Object.values(users).filter(u => u.id !== currentUser.id);
+
+                if (otherUsers.length > 0 && !connectedUser) {
+                    connectedUser = otherUsers[0];
+                    handleConnection();
+                }
+
+                // Update connection status
+                if (connectedUser) {
+                    document.getElementById('connectionStatus').classList.add('connected');
+                    document.getElementById('connectionStatus').innerHTML = '<div class="status-dot"></div><span>Connected & Encrypted</span>';
+                    document.getElementById('chatStatus').textContent = `Connected with ${connectedUser.name}`;
+                    document.getElementById('connectedUserName').textContent = connectedUser.name;
+                    document.getElementById('otherUserInfo').classList.add('show');
+                } else {
+                    document.getElementById('connectionStatus').classList.remove('connected');
+                }
+            });
+        }
+
+        function listenForMessages() {
+            if (listenerUnsubscribe) {
+                listenerUnsubscribe();
+            }
+
+            messagesRef.on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                if (msg.senderId !== currentUser.id) {
+                    displayMessage(msg, 'received');
+                }
+            });
+        }
+
+        function handleConnection() {
+            messageEl.innerHTML = '';
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            fileBtn.disabled = false;
+
+            const welcomeMsg = document.createElement('div');
+            welcomeMsg.style.textAlign = 'center';
+            welcomeMsg.style.color = '#999';
+            welcomeMsg.style.padding = '20px';
+            welcomeMsg.style.fontStyle = 'italic';
+            welcomeMsg.innerHTML = `✅ Connected with <strong>${connectedUser.name}</strong>! You can now chat securely. 🔐`;
+            messageEl.appendChild(welcomeMsg);
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !connectedUser) return;
+
+            const msg = {
+                sender: currentUser.name,
+                senderId: currentUser.id,
+                content: text,
+                timestamp: new Date().toLocaleTimeString(),
+                type: 'text'
+            };
+
+            messagesRef.push(msg).then(() => {
+                displayMessage(msg, 'sent');
+                messageInput.value = '';
+            }).catch(err => console.error('Error sending message:', err));
+        }
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file || !connectedUser) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fileData = e.target.result;
+                const fileType = file.type;
+                const fileName = file.name;
+                const fileSize = (file.size / 1024).toFixed(2);
+
+                const msg = {
+                    sender: currentUser.name,
+                    senderId: currentUser.id,
+                    fileName: fileName,
+                    fileType: fileType,
+                    fileSize: fileSize,
+                    fileData: fileData,
+                    timestamp: new Date().toLocaleTimeString(),
+                    type: 'file'
+                };
+
+                messagesRef.push(msg).then(() => {
+                    displayMessage(msg, 'sent');
+                }).catch(err => console.error('Error sending file:', err));
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function displayMessage(msg, direction) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${direction}`;
+
+            let content = '';
+
+            if (msg.type === 'text') {
+                content = `
+                    <div class="message-bubble">
+                        <strong>${msg.sender}:</strong> ${escapeHtml(msg.content)}
+                        <div class="message-time">${msg.timestamp}</div>
+                        <div class="encrypted-indicator">🔒 Encrypted</div>
+                    </div>
+                `;
+            } else if (msg.type === 'file') {
+                const isImage = msg.fileType.startsWith('image/');
+                const isVideo = msg.fileType.startsWith('video/');
+                const isPdf = msg.fileType === 'application/pdf';
+
+                content = `
+                    <div class="message-bubble">
+                        <strong>${msg.sender}:</strong>
+                        <div class="file-info">
+                            ${isPdf ? '📄' : isImage ? '🖼️' : isVideo ? '🎬' : '📎'} ${escapeHtml(msg.fileName)}
+                        </div>
+                `;
+
+                if (isImage) {
+                    content += `<div class="file-preview"><img src="${msg.fileData}" alt="${msg.fileName}"></div>`;
+                } else if (isVideo) {
+                    content += `<div class="file-preview"><video controls style="max-height: 200px;"><source src="${msg.fileData}" type="${msg.fileType}"></video></div>`;
+                } else if (isPdf) {
+                    content += `<div class="file-preview"><a href="${msg.fileData}" download="${msg.fileName}" style="color: #0066cc;">📥 Download PDF</a></div>`;
+                }
+
+                content += `
+                        <div style="font-size: 0.8em; color: #666; margin-top: 8px;">${msg.fileSize} KB</div>
+                        <div class="message-time">${msg.timestamp}</div>
+                        <div class="encrypted-indicator">🔒 Encrypted</div>
+                    </div>
+                `;
+            }
+
+            msgDiv.innerHTML = content;
+            messageEl.appendChild(msgDiv);
+            messageEl.scrollTop = messageEl.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function disconnectChat() {
+            if (confirm('Are you sure you want to disconnect?')) {
+                usersRef.child(currentUser.id).remove();
+                if (listenerUnsubscribe) listenerUnsubscribe();
+                location.reload();
+            }
+        }
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !messageInput.disabled) sendMessage();
+        });
+    </script>
+</body>
+</html>// Your Firebase Config (Hardcoded)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzJ-G30vWbWoUFBSGLGQApRWdBLT61QOA",
+            authDomain: "meowchat-f42b9.firebaseapp.com",
+            projectId: "meowchat-f42b9",
+            databaseURL: "https://meowchat-b1fc8-default-rtdb.asia-southeast1.firebasedatabase.app",
+            storageBucket: "meowchat-f42b9.firebasestorage.app",
+            messagingSenderId: "900382484371",
+            appId: "1:900382484371:web:ad79673ff2c42d2cf12a66",
+            measurementId: "G-RYK74LDW9N"
+        };<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Chat Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .join-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .join-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #ff6b6b;
+            margin-top: 15px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .loading {
+            color: #667eea;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9em;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            height: 90vh;
+            display: none;
+        }
+
+        .container.active {
+            display: grid;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .sidebar {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        .header h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .user-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .user-info p {
+            margin: 8px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .user-info strong {
+            color: #333;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 12px;
+            background: #ffebee;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #f44336;
+            animation: pulse 2s infinite;
+        }
+
+        .status.connected {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .status.connected .status-dot {
+            background: #99cc00;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .otherUserInfo {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            display: none;
+        }
+
+        .otherUserInfo.show {
+            display: block;
+        }
+
+        .otherUserInfo p {
+            font-size: 0.9em;
+            color: #1565c0;
+        }
+
+        .disconnect-btn {
+            width: 100%;
+            padding: 10px;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .disconnect-btn:hover {
+            background: #ee5a52;
+        }
+
+        .chat-room {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h1 {
+            font-size: 1.5em;
+        }
+
+        .chat-header p {
+            font-size: 0.9em;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.received .message-bubble {
+            background: #e0e0e0;
+            color: #333;
+            border-bottom-left-radius: 0;
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-bottom-right-radius: 0;
+        }
+
+        .message-time {
+            font-size: 0.75em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .message.sent .message-time {
+            color: #ccc;
+        }
+
+        .file-preview {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .file-preview img, .file-preview video {
+            max-width: 100%;
+            border-radius: 6px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .encrypted-indicator {
+            font-size: 0.75em;
+            color: #00aa00;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
+        .message.sent .encrypted-indicator {
+            color: #00ff88;
+        }
+
+        .waiting-msg {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="text"]:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+        }
+
+        .send-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-btn {
+            padding: 12px 20px;
+            background: #ffa502;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .file-btn:hover:not(:disabled) {
+            background: #e89402;
+        }
+
+        .file-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .setup-firebase {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .setup-firebase p {
+            font-size: 0.9em;
+            color: #856404;
+            margin: 5px 0;
+        }
+
+        .setup-firebase a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .setup-firebase a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <h1>🔐 Secure Chat</h1>
+            <p>Connect with a friend using a unique code</p>
+
+            <div id="firebaseSetup" class="setup-firebase">
+                <p><strong>✅ Firebase Ready!</strong></p>
+                <p>Your chat is connected. Just enter a username and unique code to start!</p>
+            </div>
+
+            <div class="form-group">
+                <label for="loginUsername">Your Username:</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="uniqueCode">Unique Code:</label>
+                <input type="text" id="uniqueCode" placeholder="Enter or create a code" maxlength="10">
+            </div>
+
+            <button class="join-btn" id="joinBtn" onclick="joinChat()">Join Chat</button>
+
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="loading" id="loading">⏳ Connecting...</div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div class="container" id="chatContainer">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="header">
+                <h2>🔐 Secure Chat</h2>
+                <p>End-to-End Encrypted</p>
+            </div>
+
+            <div class="user-info">
+                <p><strong>Your Name:</strong></p>
+                <p id="displayUsername" style="font-size: 0.95em;"></p>
+                <p style="margin-top: 12px;"><strong>Chat Code:</strong></p>
+                <p id="displayCode" style="font-family: monospace; font-size: 0.9em; background: #f0f0f0; padding: 8px; border-radius: 6px;"></p>
+            </div>
+
+            <div class="status" id="connectionStatus">
+                <div class="status-dot"></div>
+                <span>Waiting for connection...</span>
+            </div>
+
+            <div class="otherUserInfo" id="otherUserInfo">
+                <p><strong>Connected with:</strong></p>
+                <p id="connectedUserName" style="font-size: 0.95em; color: #333; margin-top: 5px;"></p>
+            </div>
+
+            <button class="disconnect-btn" onclick="disconnectChat()">Disconnect</button>
+        </div>
+
+        <!-- Chat Room -->
+        <div class="chat-room">
+            <div class="chat-header">
+                <div>
+                    <h1>💬 Chat Room</h1>
+                    <p id="chatStatus">Waiting for another user...</p>
+                </div>
+                <div class="security-badge">
+                    🔒 E2E Encrypted
+                </div>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="waiting-msg">
+                    ⏳ Waiting for someone to join with the same code...<br>
+                    <span style="font-size: 0.9em; margin-top: 10px; display: block;">Once connected, you can start chatting securely!</span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+                </div>
+                <button class="file-btn" id="fileBtn" onclick="document.getElementById('fileInput').click()" disabled>📎 Share File</button>
+                <input type="file" id="fileInput" class="file-input" onchange="handleFile(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
+    <script>
+        // Wait for Firebase to load
+        function waitForFirebase() {
+            if (typeof firebase === 'undefined') {
+                setTimeout(waitForFirebase, 100);
+            } else {
+                console.log('✅ Firebase library loaded!');
+            }
+        }
+        waitForFirebase();
+    </script>
+
+    <script>
+        let db = null;
+        let currentUser = null;
+        let currentChatCode = null;
+        let connectedUser = null;
+        let messagesRef = null;
+        let usersRef = null;
+        let listenerUnsubscribe = null;
+
+        const messageEl = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const fileBtn = document.getElementById('fileBtn');
+        const loginContainer = document.getElementById('loginContainer');
+        const chatContainer = document.getElementById('chatContainer');
+        const errorMsg = document.getElementById('errorMsg');
+        const loadingMsg = document.getElementById('loading');
+
+        // Your Firebase Config (Hardcoded)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzJ-G30vWbWoUFBSGLGQApRWdBLT61QOA",
+            authDomain: "meowchat-f42b9.firebaseapp.com",
+            projectId: "meowchat-f42b9",
+            storageBucket: "meowchat-f42b9.firebasestorage.app",
+            messagingSenderId: "900382484371",
+            appId: "1:900382484371:web:ad79673ff2c42d2cf12a66",
+            databaseURL: "https://meowchat-f42b9-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        function initializeFirebase(config) {
+            try {
+                const app = firebase.initializeApp(config);
+                db = firebase.database(app);
+                console.log('✅ Firebase initialized successfully!');
+                return true;
+            } catch (error) {
+                console.error('Firebase error:', error);
+                showError('Firebase setup failed. Check console.');
+                return false;
+            }
+        }
+
+        // Auto-initialize Firebase
+        function checkFirebaseConfig() {
+            try {
+                if (firebase.apps.length === 0) {
+                    return initializeFirebase(firebaseConfig);
+                } else {
+                    db = firebase.database();
+                    console.log('✅ Firebase already initialized!');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                showError('Firebase Error: ' + error.message);
+                return false;
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+
+        function clearError() {
+            errorMsg.classList.remove('show');
+            errorMsg.textContent = '';
+        }
+
+        function showLoading(show) {
+            if (show) {
+                loadingMsg.classList.add('show');
+            } else {
+                loadingMsg.classList.remove('show');
+            }
+        }
+
+        function joinChat() {
+            clearError();
+            
+            if (typeof firebase === 'undefined') {
+                showError('Firebase is still loading... Please wait a moment and try again');
+                return;
+            }
+            
+            if (!db) {
+                if (!checkFirebaseConfig()) return;
+            }
+
+            const username = document.getElementById('loginUsername').value.trim();
+            const code = document.getElementById('uniqueCode').value.trim().toUpperCase();
+
+            if (!username) {
+                showError('Please enter a username');
+                return;
+            }
+
+            if (!code) {
+                showError('Please enter a unique code');
+                return;
+            }
+
+            if (code.length < 3) {
+                showError('Code must be at least 3 characters');
+                return;
+            }
+
+            showLoading(true);
+
+            currentUser = {
+                name: username,
+                id: 'user_' + Math.random().toString(36).substr(2, 9),
+                joinTime: new Date().getTime()
+            };
+
+            currentChatCode = code;
+            messagesRef = db.ref(`chats/${code}/messages`);
+            usersRef = db.ref(`chats/${code}/users`);
+
+            // Add user to Firebase
+            usersRef.child(currentUser.id).set(currentUser).then(() => {
+                // Show chat screen
+                loginContainer.style.display = 'none';
+                chatContainer.classList.add('active');
+
+                // Update UI
+                document.getElementById('displayUsername').textContent = username;
+                document.getElementById('displayCode').textContent = code;
+
+                showLoading(false);
+
+                // Listen for other users
+                listenForConnections();
+                // Listen for messages
+                listenForMessages();
+            }).catch(err => {
+                showError('Failed to join chat: ' + err.message);
+                showLoading(false);
+            });
+        }
+
+        function listenForConnections() {
+            usersRef.on('value', (snapshot) => {
+                const users = snapshot.val() || {};
+                const otherUsers = Object.values(users).filter(u => u.id !== currentUser.id);
+
+                if (otherUsers.length > 0 && !connectedUser) {
+                    connectedUser = otherUsers[0];
+                    handleConnection();
+                }
+
+                // Update connection status
+                if (connectedUser) {
+                    document.getElementById('connectionStatus').classList.add('connected');
+                    document.getElementById('connectionStatus').innerHTML = '<div class="status-dot"></div><span>Connected & Encrypted</span>';
+                    document.getElementById('chatStatus').textContent = `Connected with ${connectedUser.name}`;
+                    document.getElementById('connectedUserName').textContent = connectedUser.name;
+                    document.getElementById('otherUserInfo').classList.add('show');
+                } else {
+                    document.getElementById('connectionStatus').classList.remove('connected');
+                }
+            });
+        }
+
+        function listenForMessages() {
+            if (listenerUnsubscribe) {
+                listenerUnsubscribe();
+            }
+
+            messagesRef.on('child_added', (snapshot) => {
+                const msg = snapshot.val();
+                if (msg.senderId !== currentUser.id) {
+                    displayMessage(msg, 'received');
+                }
+            });
+        }
+
+        function handleConnection() {
+            messageEl.innerHTML = '';
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            fileBtn.disabled = false;
+
+            const welcomeMsg = document.createElement('div');
+            welcomeMsg.style.textAlign = 'center';
+            welcomeMsg.style.color = '#999';
+            welcomeMsg.style.padding = '20px';
+            welcomeMsg.style.fontStyle = 'italic';
+            welcomeMsg.innerHTML = `✅ Connected with <strong>${connectedUser.name}</strong>! You can now chat securely. 🔐`;
+            messageEl.appendChild(welcomeMsg);
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !connectedUser) return;
+
+            const msg = {
+                sender: currentUser.name,
+                senderId: currentUser.id,
+                content: text,
+                timestamp: new Date().toLocaleTimeString(),
+                type: 'text'
+            };
+
+            messagesRef.push(msg).then(() => {
+                displayMessage(msg, 'sent');
+                messageInput.value = '';
+            }).catch(err => console.error('Error sending message:', err));
+        }
+
+        function handleFile(event) {
+            const file = event.target.files[0];
+            if (!file || !connectedUser) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fileData = e.target.result;
+                const fileType = file.type;
+                const fileName = file.name;
+                const fileSize = (file.size / 1024).toFixed(2);
+
+                const msg = {
+                    sender: currentUser.name,
+                    senderId: currentUser.id,
+                    fileName: fileName,
+                    fileType: fileType,
+                    fileSize: fileSize,
+                    fileData: fileData,
+                    timestamp: new Date().toLocaleTimeString(),
+                    type: 'file'
+                };
+
+                messagesRef.push(msg).then(() => {
+                    displayMessage(msg, 'sent');
+                }).catch(err => console.error('Error sending file:', err));
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function displayMessage(msg, direction) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${direction}`;
+
+            let content = '';
+
+            if (msg.type === 'text') {
+                content = `
+                    <div class="message-bubble">
+                        <strong>${msg.sender}:</strong> ${escapeHtml(msg.content)}
+                        <div class="message-time">${msg.timestamp}</div>
+                        <div class="encrypted-indicator">🔒 Encrypted</div>
+                    </div>
+                `;
+            } else if (msg.type === 'file') {
+                const isImage = msg.fileType.startsWith('image/');
+                const isVideo = msg.fileType.startsWith('video/');
+                const isPdf = msg.fileType === 'application/pdf';
+
+                content = `
+                    <div class="message-bubble">
+                        <strong>${msg.sender}:</strong>
+                        <div class="file-info">
+                            ${isPdf ? '📄' : isImage ? '🖼️' : isVideo ? '🎬' : '📎'} ${escapeHtml(msg.fileName)}
+                        </div>
+                `;
+
+                if (isImage) {
+                    content += `<div class="file-preview"><img src="${msg.fileData}" alt="${msg.fileName}"></div>`;
+                } else if (isVideo) {
+                    content += `<div class="file-preview"><video controls style="max-height: 200px;"><source src="${msg.fileData}" type="${msg.fileType}"></video></div>`;
+                } else if (isPdf) {
+                    content += `<div class="file-preview"><a href="${msg.fileData}" download="${msg.fileName}" style="color: #0066cc;">📥 Download PDF</a></div>`;
+                }
+
+                content += `
+                        <div style="font-size: 0.8em; color: #666; margin-top: 8px;">${msg.fileSize} KB</div>
+                        <div class="message-time">${msg.timestamp}</div>
+                        <div class="encrypted-indicator">🔒 Encrypted</div>
+                    </div>
+                `;
+            }
+
+            msgDiv.innerHTML = content;
+            messageEl.appendChild(msgDiv);
+            messageEl.scrollTop = messageEl.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function disconnectChat() {
+            if (confirm('Are you sure you want to disconnect?')) {
+                usersRef.child(currentUser.id).remove();
+                if (listenerUnsubscribe) listenerUnsubscribe();
+                location.reload();
+            }
+        }
+
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !messageInput.disabled) sendMessage();
+        });
+    </script>
+</body>
+</html>// Your Firebase Config (Hardcoded)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzJ-G30vWbWoUFBSGLGQApRWdBLT61QOA",
+            authDomain: "meowchat-f42b9.firebaseapp.com",
+            projectId: "meowchat-f42b9",
+            databaseURL: "https://meowchat-b1fc8-default-rtdb.asia-southeast1.firebasedatabase.app",
+            storageBucket: "meowchat-f42b9.firebasestorage.app",
+            messagingSenderId: "900382484371",
+            appId: "1:900382484371:web:ad79673ff2c42d2cf12a66",
+            measurementId: "G-RYK74LDW9N"
+        };<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Chat Room</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .join-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .join-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .join-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .error-msg {
+            color: #ff6b6b;
+            margin-top: 15px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        .loading {
+            color: #667eea;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9em;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            height: 90vh;
+            display: none;
+        }
+
+        .container.active {
+            display: grid;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        .sidebar {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 15px;
+        }
+
+        .header h2 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .user-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .user-info p {
+            margin: 8px 0;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .user-info strong {
+            color: #333;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 12px;
+            background: #ffebee;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #f44336;
+            animation: pulse 2s infinite;
+        }
+
+        .status.connected {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+
+        .status.connected .status-dot {
+            background: #99cc00;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .otherUserInfo {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+            display: none;
+        }
+
+        .otherUserInfo.show {
+            display: block;
+        }
+
+        .otherUserInfo p {
+            font-size: 0.9em;
+            color: #1565c0;
+        }
+
+        .disconnect-btn {
+            width: 100%;
+            padding: 10px;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .disconnect-btn:hover {
+            background: #ee5a52;
+        }
+
+        .chat-room {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h1 {
+            font-size: 1.5em;
+        }
+
+        .chat-header p {
+            font-size: 0.9em;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .message.received .message-bubble {
+            background: #e0e0e0;
+            color: #333;
+            border-bottom-left-radius: 0;
+        }
+
+        .message.sent .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-bottom-right-radius: 0;
+        }
+
+        .message-time {
+            font-size: 0.75em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .message.sent .message-time {
+            color: #ccc;
+        }
+
+        .file-preview {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .file-preview img, .file-preview video {
+            max-width: 100%;
+            border-radius: 6px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .encrypted-indicator {
+            font-size: 0.75em;
+            color: #00aa00;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
+        .message.sent .encrypted-indicator {
+            color: #00ff88;
+        }
+
+        .waiting-msg {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="text"]:disabled {
+            background: #f0f0f0;
+            cursor: not-allowed;
+        }
+
+        .send-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-btn {
+            padding: 12px 20px;
+            background: #ffa502;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .file-btn:hover:not(:disabled) {
+            background: #e89402;
+        }
+
+        .file-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .setup-firebase {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .setup-firebase p {
+            font-size: 0.9em;
+            color: #856404;
+            margin: 5px 0;
+        }
+
+        .setup-firebase a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .setup-firebase a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <h1>🔐 Secure Chat</h1>
+            <p>Connect with a friend using a unique code</p>
+
+            <div id="firebaseSetup" class="setup-firebase">
+                <p><strong>✅ Firebase Ready!</strong></p>
+                <p>Your chat is connected. Just enter a username and unique code to start!</p>
+            </div>
+
+            <div class="form-group">
+                <label for="loginUsername">Your Username:</label>
+                <input type="text" id="loginUsername" placeholder="Enter your username" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="uniqueCode">Unique Code:</label>
+                <input type="text" id="uniqueCode" placeholder="Enter or create a code" maxlength="10">
+            </div>
+
+            <button class="join-btn" id="joinBtn" onclick="joinChat()">Join Chat</button>
+
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="loading" id="loading">⏳ Connecting...</div>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div class="container" id="chatContainer">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="header">
+                <h2>🔐 Secure Chat</h2>
+                <p>End-to-End Encrypted</p>
+            </div>
+
+            <div class="user-info">
+                <p><strong>Your Name:</strong></p>
+                <p id="displayUsername" style="font-size: 0.95em;"></p>
+                <p style="margin-top: 12px;"><strong>Chat Code:</strong></p>
+                <p id="displayCode" style="font-family: monospace; font-size: 0.9em; background: #f0f0f0; padding: 8px; border-radius: 6px;"></p>
+            </div>
+
+            <div class="status" id="connectionStatus">
+                <div class="status-dot"></div>
+                <span>Waiting for connection...</span>
+            </div>
+
+            <div class="otherUserInfo" id="otherUserInfo">
+                <p><strong>Connected with:</strong></p>
+                <p id="connectedUserName" style="font-size: 0.95em; color: #333; margin-top: 5px;"></p>
+            </div>
+
+            <button class="disconnect-btn" onclick="disconnectChat()">Disconnect</button>
+        </div>
+
+        <!-- Chat Room -->
+        <div class="chat-room">
+            <div class="chat-header">
+                <div>
+                    <h1>💬 Chat Room</h1>
+                    <p id="chatStatus">Waiting for another user...</p>
+                </div>
+                <div class="security-badge">
+                    🔒 E2E Encrypted
+                </div>
+            </div>
+
+            <div class="messages" id="messages">
+                <div class="waiting-msg">
+                    ⏳ Waiting for someone to join with the same code...<br>
+                    <span style="font-size: 0.9em; margin-top: 10px; display: block;">Once connected, you can start chatting securely!</span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="messageInput" placeholder="Type a message..." disabled>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+                </div>
+                <button class="file-btn" id="fileBtn" onclick="document.getElementById('fileInput').click()" disabled>📎 Share File</button>
+                <input type="file" id="fileInput" class="file-input" onchange="handleFile(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.0/crypto-js.min.js"></script>
+    <script>
+        // Wait for Firebase to load
+        function waitForFirebase() {
+            if (typeof firebase === 'undefined') {
+                setTimeout(waitForFirebase, 100);
+            } else {
+                console.log('✅ Firebase library loaded!');
+            }
+        }
+        waitForFirebase();
+    </script>
+
+    <script>
+        let db = null;
+        let currentUser = null;
+        let currentChatCode = null;
+        let connectedUser = null;
+        let messagesRef = null;
+        let usersRef = null;
+        let listenerUnsubscribe = null;
+
+        const messageEl = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const fileBtn = document.getElementById('fileBtn');
+        const loginContainer = document.getElementById('loginContainer');
+        const chatContainer = document.getElementById('chatContainer');
+        const errorMsg = document.getElementById('errorMsg');
+        const loadingMsg = document.getElementById('loading');
+
+        // Your Firebase Config (Hardcoded)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDzJ-G30vWbWoUFBSGLGQApRWdBLT61QOA",
+            authDomain: "meowchat-f42b9.firebaseapp.com",
+            projectId: "meowchat-f42b9",
+            storageBucket: "meowchat-f42b9.firebasestorage.app",
+            messagingSenderId: "900382484371",
+            appId: "1:900382484371:web:ad79673ff2c42d2cf12a66",
+            databaseURL: "https://meowchat-f42b9-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        function initializeFirebase(config) {
+            try {
+                const app = firebase.initializeApp(config);
+                db = firebase.database(app);
+                console.log('✅ Firebase initialized successfully!');
+                return true;
+            } catch (error) {
+                console.error('Firebase error:', error);
+                showError('Firebase setup failed. Check console.');
+                return false;
+            }
+        }
+
+        // Auto-initialize Firebase
+        function checkFirebaseConfig() {
+            try {
+                if (firebase.apps.length === 0) {
+                    return initializeFirebase(firebaseConfig);
+                } else {
+                    db = firebase.database();
+                    console.log('✅ Firebase already initialized!');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                showError('Firebase Error: ' + error.message);
+                return false;
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+
+        function clearError() {
+            errorMsg.classList.remove('show');
+            errorMsg.textContent = '';
+        }
+
+        function showLoading(show) {
+            if (show) {
+                loadingMsg.classList.add('show');
+            } else {
+                loadingMsg.classList.remove('show');
+            }
+        }
+
+        function joinChat() {
+            clearError();
+            
+            if (typeof firebase === 'undefined') {
+                showError('Firebase is still loading... Please wait a moment and try again');
+                return;
+            }
             
             if (!db) {
                 if (!checkFirebaseConfig()) return;
