@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -365,7 +365,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -732,7 +732,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -1099,7 +1099,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -1466,7 +1466,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -1833,7 +1833,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -2200,7 +2200,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -2567,7 +2567,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -2934,7 +2934,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -3301,7 +3301,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -3668,7 +3668,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
@@ -4035,7 +4035,7 @@ export default function ChatApp() {
       </div>
     </div>
   );
-}import React, { useState, useEffect, useRef } from 'react';
+}import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
 import { 
   saveMessage, 
