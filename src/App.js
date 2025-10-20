@@ -23,7 +23,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -33,7 +32,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -44,7 +42,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -52,7 +49,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -62,13 +58,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -83,13 +77,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -121,7 +113,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -144,7 +135,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -171,12 +161,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -243,10 +231,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -268,7 +254,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -337,7 +322,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -406,7 +390,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -416,7 +399,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -427,7 +409,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -435,7 +416,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -445,13 +425,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -466,13 +444,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -504,7 +480,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -527,7 +502,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -554,12 +528,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -626,10 +598,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -651,7 +621,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -720,7 +689,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -789,7 +757,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -799,7 +766,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -810,7 +776,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -818,7 +783,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -828,13 +792,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -849,13 +811,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -887,7 +847,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -910,7 +869,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -937,12 +895,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -1009,10 +965,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -1034,7 +988,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -1103,7 +1056,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -1172,7 +1124,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -1182,7 +1133,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -1193,7 +1143,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -1201,7 +1150,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -1211,13 +1159,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -1232,13 +1178,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1270,7 +1214,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -1293,7 +1236,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -1320,12 +1262,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -1392,10 +1332,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -1417,7 +1355,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -1486,7 +1423,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -1555,7 +1491,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -1565,7 +1500,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -1576,7 +1510,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -1584,7 +1517,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -1594,13 +1526,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -1615,13 +1545,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1653,7 +1581,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -1676,7 +1603,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -1703,12 +1629,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -1775,10 +1699,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -1800,7 +1722,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -1869,7 +1790,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -1938,7 +1858,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -1948,7 +1867,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -1959,7 +1877,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -1967,7 +1884,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -1977,13 +1893,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -1998,13 +1912,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -2036,7 +1948,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -2059,7 +1970,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -2086,12 +1996,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -2158,10 +2066,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -2183,7 +2089,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -2252,7 +2157,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -2321,7 +2225,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -2331,7 +2234,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -2342,7 +2244,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -2350,7 +2251,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -2360,13 +2260,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -2381,13 +2279,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -2419,7 +2315,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -2442,7 +2337,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -2469,12 +2363,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -2541,10 +2433,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -2566,7 +2456,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -2635,7 +2524,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -2704,7 +2592,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -2714,7 +2601,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -2725,7 +2611,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -2733,7 +2618,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -2743,13 +2627,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -2764,13 +2646,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -2802,7 +2682,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -2825,7 +2704,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -2852,12 +2730,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -2924,10 +2800,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -2949,7 +2823,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -3018,7 +2891,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -3087,7 +2959,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -3097,7 +2968,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -3108,7 +2978,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -3116,7 +2985,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -3126,13 +2994,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -3147,13 +3013,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -3185,7 +3049,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -3208,7 +3071,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -3235,12 +3097,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -3307,10 +3167,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -3332,7 +3190,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -3401,7 +3258,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -3470,7 +3326,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -3480,7 +3335,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -3491,7 +3345,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -3499,7 +3352,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -3509,13 +3361,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -3530,13 +3380,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -3568,7 +3416,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -3591,7 +3438,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -3618,12 +3464,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -3690,10 +3534,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -3715,7 +3557,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -3784,7 +3625,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -3853,7 +3693,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -3863,7 +3702,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -3874,7 +3712,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -3882,7 +3719,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -3892,13 +3728,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -3913,13 +3747,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -3951,7 +3783,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -3974,7 +3805,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -4001,12 +3831,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -4073,10 +3901,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -4098,7 +3924,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -4167,7 +3992,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
@@ -4236,7 +4060,6 @@ export default function ChatApp() {
   const fileInputRef = useRef(null);
   const unsubscribeRef = useRef(null);
 
-  // Encryption function
   const encryptMessage = (text, key) => {
     if (!key) return text;
     try {
@@ -4246,7 +4069,6 @@ export default function ChatApp() {
     }
   };
 
-  // Decryption function
   const decryptMessage = (encrypted, key) => {
     if (!key) return encrypted;
     try {
@@ -4257,7 +4079,6 @@ export default function ChatApp() {
     }
   };
 
-  // Join room
   const handleJoinRoom = async () => {
     if (!username.trim() || !roomCode.trim()) {
       alert('Please enter both username and room code');
@@ -4265,7 +4086,6 @@ export default function ChatApp() {
     }
 
     setLoading(true);
-
     const key = btoa(roomCode);
     setSharedKey(key);
 
@@ -4275,13 +4095,11 @@ export default function ChatApp() {
     try {
       await saveUserToRoom(roomCodeUppercase, userId, username);
 
-      // Listen to messages
       const unsubscribe = listenToMessages(roomCodeUppercase, (msgs) => {
         setMessages(msgs);
       });
 
       unsubscribeRef.current = unsubscribe;
-
       setCurrentPage('chat');
 
       const welcomeMsg = {
@@ -4296,13 +4114,11 @@ export default function ChatApp() {
       await saveMessage(roomCodeUppercase, welcomeMsg);
     } catch (error) {
       alert('Error joining room: ' + error.message);
-      setLoading(false);
     }
 
     setLoading(false);
   };
 
-  // Handle file upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -4334,7 +4150,6 @@ export default function ChatApp() {
     fileInputRef.current.value = '';
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -4357,7 +4172,6 @@ export default function ChatApp() {
     }
   };
 
-  // Exit room
   const handleExit = async () => {
     try {
       await removeUserFromRoom(roomCode.toUpperCase(), currentUserId);
@@ -4384,12 +4198,10 @@ export default function ChatApp() {
     }
   };
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Login page
   if (currentPage === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center p-4">
@@ -4456,10 +4268,8 @@ export default function ChatApp() {
     );
   }
 
-  // Chat page
   return (
     <div className="flex flex-col h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex justify-between items-center">
           <div>
@@ -4481,7 +4291,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto w-full">
           {messages.length === 0 ? (
@@ -4550,7 +4359,6 @@ export default function ChatApp() {
         </div>
       </div>
 
-      {/* Input Area */}
       <div className="bg-white border-t border-gray-200 p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-end space-x-2">
