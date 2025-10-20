@@ -1,12 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -367,13 +361,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -734,13 +722,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -1101,13 +1083,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -1468,13 +1444,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -1835,13 +1805,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -2202,13 +2166,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -2569,13 +2527,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -2936,13 +2888,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -3303,13 +3249,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -3670,13 +3610,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
@@ -4037,13 +3971,7 @@ export default function ChatApp() {
   );
 }import { useState, useEffect, useRef } from 'react';
 import { Send, Lock, LogOut, Upload, File, Loader } from 'lucide-react';
-import { 
-  saveMessage, 
-  listenToMessages, 
-  uploadFile,
-  saveUserToRoom,
-  removeUserFromRoom 
-} from './firebase';
+import { saveMessage, listenToMessages, uploadFile, saveUserToRoom, removeUserFromRoom } from './firebase';
 import './App.css';
 
 export default function ChatApp() {
