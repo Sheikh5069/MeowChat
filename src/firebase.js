@@ -6,9 +6,7 @@ import {
   push, 
   onValue, 
   remove, 
-  set,
-  query,
-  orderByChild 
+  set
 } from 'firebase/database';
 import { 
   getStorage, 
